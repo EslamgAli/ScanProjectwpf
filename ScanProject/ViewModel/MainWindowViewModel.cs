@@ -109,7 +109,7 @@ namespace ScanProject.ViewModel
                 if (State == 4 && count != 0)
                 {
                     count = 0;
-                    _connection.SendAsync("ScanCompleted");
+                    _connection.SendAsync("ScanCompleted", _twainCore.folderName);
                 }
 
                 count++;
