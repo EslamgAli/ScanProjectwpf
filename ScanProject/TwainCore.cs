@@ -42,6 +42,7 @@ namespace ScanProject
 
         private string _tempPath;
         private int count = 1;
+        private int UploadImgCount = 1;
         private string displayfile = "";
         public string folderName = "";
         #endregion Private Property
@@ -342,7 +343,7 @@ namespace ScanProject
                 string apiUrl = "http://localhost:5029/api/SaveImage";
 
                 // Add the image data to the form data
-                formData.Add(new ByteArrayContent(imageBytes), "image", "image.jpg");
+                formData.Add(new ByteArrayContent(imageBytes), "image", $"scanned_image_{UploadImgCount++}.png");
                 //folderName
                 formData.Add(new StringContent(folderName), "folderName");
                 // Send the HTTP POST request to the API
