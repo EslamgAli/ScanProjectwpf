@@ -7,6 +7,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -42,6 +43,7 @@ namespace ScanProject
         private string _tempPath;
         private int count = 1;
         private string displayfile = "";
+        public string folderName = "";
         #endregion Private Property
         IntPtr Handle;
         #region Public Property
@@ -105,7 +107,7 @@ namespace ScanProject
             _twainSession.DataTransferred += eventHandler;*/
             //
 
-            _twainSession.DataTransferred += (s, e) =>
+            _twainSession.DataTransferred += async (s, e) =>
              {
                  if (e.NativeData != IntPtr.Zero)
                  {
@@ -123,7 +125,7 @@ namespace ScanProject
                                  {
                                      img = stream.ConvertToWpfBitmap(720, 0);
                                      string name = SaveScannedImage(img);
-
+                                     await ReadAndUploadImage(name);
                                      // tcs.TrySetResult(name);
                                  }
                              }
@@ -317,14 +319,50 @@ namespace ScanProject
             }
 
             displayfile = filePath;
+
             return filePath;
         }
 
         #endregion Public Methods
-    }
+        private async Task ReadAndUploadImage(string imageUrl)
+        {
+            // Read the image file into a byte array
+            byte[] imageBytes = File.ReadAllBytes(imageUrl);
 
-    public class StateChangedArgs : EventArgs
-    {
-        public int NewState { get; set; }
+            // Upload the image to the API
+            await UploadImage(imageBytes);
+        }
+
+        private async Task UploadImage(byte[] imageBytes)
+        {
+            using (HttpClient client = new HttpClient())
+            using (var formData = new MultipartFormDataContent())
+            {
+                // Set the API endpoint URL
+                string apiUrl = "http://localhost:5029/api/SaveImage";
+
+                // Add the image data to the form data
+                formData.Add(new ByteArrayContent(imageBytes), "image", "image.jpg");
+                //folderName
+                formData.Add(new StringContent(folderName), "folderName");
+                // Send the HTTP POST request to the API
+                HttpResponseMessage response = await client.PostAsync(apiUrl, formData);
+
+                // Check if the request was successful
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Image uploaded successfully.");
+                }
+                else
+                {
+                    Console.WriteLine($"Error: {response.StatusCode}");
+                }
+            }
+        }
+
+        public class StateChangedArgs : EventArgs
+        {
+            public int NewState { get; set; }
+        }
     }
 }

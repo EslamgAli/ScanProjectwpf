@@ -125,6 +125,7 @@ namespace ScanProject.ViewModel
             // {
             _connection.On<string>("startscan", async (string messageContent) =>
             {
+                _twainCore.folderName = messageContent;
                 // DoTwainWork();
                 //_twainCore.StartSource(WindowHandle);
                 await _twainCore.ScanDocumentAsync(@"E:\\", $"scanned_image_{count++}", WindowHandle);
