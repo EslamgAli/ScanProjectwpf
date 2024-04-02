@@ -26,7 +26,7 @@ namespace ScanProject.ViewModel
         #endregion Private Fields
 
         #region signalr
-        private HubConnection _connection;
+        public HubConnection _connection;
         private HubConnectionBuilder _connectionBuilder;
         bool isCompleted = false;
         #endregion
@@ -109,11 +109,14 @@ namespace ScanProject.ViewModel
                 if (State == 4 && count != 0)
                 {
                     count = 0;
-                    _connection.SendAsync("ScanCompleted", _twainCore.folderName);
+
+                    _connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter();
                 }
 
                 count++;
             };
+
+            _twainCore.mainWindowViewModel = this;
             // MessageClient messageClient = new MessageClient();
             //  messageClient.CreateConncetion();
             //signalr

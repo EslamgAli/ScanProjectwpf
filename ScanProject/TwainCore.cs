@@ -1,4 +1,5 @@
 ﻿//using NTwain;
+using Microsoft.AspNetCore.SignalR.Client;
 using NTwain;
 using NTwain.Data;
 using ScanProject.SignalR;
@@ -45,6 +46,8 @@ namespace ScanProject
         private int UploadImgCount = 1;
         private string displayfile = "";
         public string folderName = "";
+        public MainWindowViewModel mainWindowViewModel { get; set; }
+        // public HubConnection _connection;
         #endregion Private Property
         IntPtr Handle;
         #region Public Property
@@ -125,9 +128,10 @@ namespace ScanProject
                                  if (stream != null)
                                  {
                                      img = stream.ConvertToWpfBitmap(720, 0);
-                                     string name = SaveScannedImage(img);
-                                     await ReadAndUploadImage(name);
-                                     // tcs.TrySetResult(name);
+                                     await BitmapSourceToByteArray(img);
+                                     //string name = SaveScannedImage(img);
+                                     // await ReadAndUploadImage(name);
+
                                  }
                              }
 
@@ -336,6 +340,7 @@ namespace ScanProject
 
         private async Task UploadImage(byte[] imageBytes)
         {
+            var imageName = $"scanned_image_{UploadImgCount++}.png";
             using (HttpClient client = new HttpClient())
             using (var formData = new MultipartFormDataContent())
             {
@@ -343,7 +348,7 @@ namespace ScanProject
                 string apiUrl = "http://localhost:5029/api/SaveImage";
 
                 // Add the image data to the form data
-                formData.Add(new ByteArrayContent(imageBytes), "image", $"scanned_image_{UploadImgCount++}.png");
+                formData.Add(new ByteArrayContent(imageBytes), "image", imageName);
                 //folderName
                 formData.Add(new StringContent(folderName), "folderName");
                 // Send the HTTP POST request to the API
@@ -352,12 +357,34 @@ namespace ScanProject
                 // Check if the request was successful
                 if (response.IsSuccessStatusCode)
                 {
+                    mainWindowViewModel._connection.SendAsync("ImageUploaded", $"{folderName}/{imageName}");
                     Console.WriteLine("Image uploaded successfully.");
                 }
                 else
                 {
                     Console.WriteLine($"Error: {response.StatusCode}");
                 }
+            }
+        }
+
+        public async Task BitmapSourceToByteArray(BitmapSource bitmapSource)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                // Create a BitmapFrame from the BitmapSource
+                BitmapFrame frame = BitmapFrame.Create(bitmapSource);
+
+                // Create an encoder (PNG encoder in this case) to encode the BitmapFrame into a byte array
+                PngBitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(frame);
+
+                // Save the BitmapFrame to the memory stream
+                encoder.Save(stream);
+
+                // Return the byte array from the memory stream
+                var imageBytes = stream.ToArray();
+
+                await UploadImage(imageBytes);
             }
         }
 
