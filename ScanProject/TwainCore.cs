@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
-using NTwain;
+﻿using NTwain;
 using NTwain.Data;
 using ScanProject.ImageUpload;
 using ScanProject.ViewModel;
@@ -193,7 +192,7 @@ namespace ScanProject
 
             if (response.IsSuccessStatusCode)
             {
-                await mainWindowViewModel._connection.SendAsync("ImageUploaded", $"{folderName}/{imageName}");
+                // await mainWindowViewModel._connection.SendAsync("ImageUploaded", $"{folderName}/{imageName}");
                 Console.WriteLine("Image uploaded successfully.");
             }
             else
