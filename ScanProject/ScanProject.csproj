@@ -191,7 +191,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="SignalR\MessageClient.cs" />
+    <Compile Include="ImageUpload\ImageUploader.cs" />
     <Compile Include="Twain.Core\TwainHelpers.cs" />
     <Compile Include="TwainCore.cs" />
     <Compile Include="ViewModel\BaseViewModel.cs" />
@@ -238,7 +238,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Model\" />
     <Folder Include="View\" />
   </ItemGroup>
   <ItemGroup>

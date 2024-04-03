@@ -6,6 +6,7 @@ using NTwain.Data;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -23,12 +24,12 @@ namespace ScanProject.ViewModel
         private string _capturedImage;
         private TwainCore _twainCore;
         int count = 1;
+        private int StateCounter = 0;
         #endregion Private Fields
 
         #region signalr
         public HubConnection _connection;
         private HubConnectionBuilder _connectionBuilder;
-        bool isCompleted = false;
         #endregion
         #region Public Fields
 
@@ -51,7 +52,7 @@ namespace ScanProject.ViewModel
             {
                 return _captureCommand ?? (_captureCommand = new RelayCommand(async () =>
                 {
-                    CapturedImage = await _twainCore.ScanDocumentAsync(@"E:\\", $"docTest{count++}", WindowHandle);
+                    CapturedImage = await _twainCore.ScanDocumentAsync(WindowHandle);
                     RaisePropertyChanged(() => CapturedImage);
                 }));
             }
@@ -93,57 +94,53 @@ namespace ScanProject.ViewModel
             get => CapturedImage == null ? Visibility.Visible : Visibility.Hidden;
         }
 
-        #endregion Public Fields
+        public void TwainStateChanged()
+        {
+            if (State == 4 && StateCounter != 0)
+            {
+                StateCounter = 0;
 
+                _connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter();
+            }
+
+            StateCounter++;
+        }
+
+        #endregion Public Fields
         #region Constructor
 
         public MainWindowViewModel()
         {
-            int count = 0;
             //Open by default the second DataSource
             _twainCore = new TwainCore(1);
             _twainCore.StateChanged += (sender, e) =>
             {
                 RaisePropertyChanged(() => State);
 
-                if (State == 4 && count != 0)
-                {
-                    count = 0;
-
-                    _connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter();
-                }
-
-                count++;
+                TwainStateChanged();
             };
 
             _twainCore.mainWindowViewModel = this;
-            // MessageClient messageClient = new MessageClient();
-            //  messageClient.CreateConncetion();
+
             //signalr
 
             _connectionBuilder = new HubConnectionBuilder();
-            _connection = _connectionBuilder.WithUrl("http://localhost:5029/chat").WithAutomaticReconnect().Build();
+            _connection = _connectionBuilder.WithUrl("http://localhost:5029/Scanner").WithAutomaticReconnect().Build();
 
-            // if (_connection.State == HubConnectionState.Disconnected)
-            // {
-            _connection.On<string>("startscan", async (string messageContent) =>
-            {
-                _twainCore.folderName = messageContent;
-                // DoTwainWork();
-                //_twainCore.StartSource(WindowHandle);
-                await _twainCore.ScanDocumentAsync(@"E:\\", $"scanned_image_{count++}", WindowHandle);
-                //RaisePropertyChanged(() => CaptureCommand);
-                isCompleted = true;
-
-            });
+            _connection.On("startscan", StartScan());
 
             _connection.StartAsync().GetAwaiter().GetResult();
+        }
 
-            /* while (!isCompleted)
-             {
-                 Task.Delay(10).GetAwaiter().GetResult();
-             }*/
-            //}
+        private Func<string, Task> StartScan()
+        {
+            return async (string messageContent) =>
+            {
+                _twainCore.folderName = messageContent;
+
+                await _twainCore.ScanDocumentAsync(WindowHandle);
+
+            };
         }
 
         #endregion Constructor
