@@ -100,11 +100,18 @@ namespace ScanProject.ViewModel
             {
                 StateCounter = 0;
 
-                _connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter();
+                //_connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter();
             }
 
             StateCounter++;
         }
+        
+        public void SourceDisabled()
+        {
+            _connection.SendAsync("ScanCompleted", _twainCore.folderName).GetAwaiter(); 
+        }
+
+
 
         #endregion Public Fields
         #region Constructor
@@ -118,6 +125,11 @@ namespace ScanProject.ViewModel
                 RaisePropertyChanged(() => State);
 
                 TwainStateChanged();
+            };
+
+            _twainCore.SourceDisabled += (sender, e) =>
+            {
+                SourceDisabled();
             };
 
             _twainCore.mainWindowViewModel = this;

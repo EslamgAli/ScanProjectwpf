@@ -25,12 +25,15 @@ namespace ScanProject
         private int UploadImgCount = 1;
         private string displayfile = "";
         public string folderName = "";
+        private bool isComplete;
+
         public MainWindowViewModel mainWindowViewModel { get; set; }
         #endregion Private Property
         //IntPtr Handle;
         #region Public Property
 
         public event EventHandler<StateChangedArgs> StateChanged;
+        public event EventHandler SourceDisabled;
 
         public int State
         {
@@ -67,7 +70,8 @@ namespace ScanProject
             PlatformInfo.Current.PreferNewDSM = false;
 
             _twainSession.TransferReady += _twainSession_TransferReady;
-            _twainSession.StateChanged += _twainSession_StateChanged;
+            //_twainSession.StateChanged += _twainSession_StateChanged;
+            _twainSession.SourceDisabled += _twainSession_SourceDisabled;
             DataTransferred();
 
             if (_twainSession.Open() != ReturnCode.Success)
@@ -148,6 +152,12 @@ namespace ScanProject
         {
             State = _twainSession.State;
             StateChanged?.Invoke(this, new StateChangedArgs() { NewState = State });
+        }
+
+        private void _twainSession_SourceDisabled(object sender, EventArgs e)
+        {
+            isComplete = true;
+            SourceDisabled?.Invoke(this , null);
         }
 
         #endregion Event Handlers
